@@ -1,0 +1,116 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+  
+    // Helper Functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    function userDocExists() {
+      return exists(/databases/$(database)/documents/users/$(request.auth.uid));
+    }
+    
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+    
+    function getUserRole() {
+      return userDocExists() ? getUserData().role : 'None';
+    }
+
+    function getMyFarmId() {
+      return userDocExists() ? getUserData().farmId : null;
+    }
+    
+    function isSuperAdmin() {
+      return isSignedIn() && (request.auth.token.email == 'adminzimarketplace@gmail.com' || request.auth.token.email == 'master');
+    }
+    
+    function isAdmin() {
+      return isSignedIn() && getUserRole() == 'Admin';
+    }
+    
+    function isManager() {
+      return isSignedIn() && (getUserRole() == 'Manager' || getUserRole() == 'Admin');
+    }
+    
+    function isWorker() {
+      return isSignedIn() && (getUserRole() == 'Worker' || getUserRole() == 'Manager' || getUserRole() == 'Admin');
+    }
+
+    function isMemberOf(farmId) {
+      return isSignedIn() && getMyFarmId() == farmId;
+    }
+
+    // Users Collection
+    match /users/{userId} {
+      allow read: if isSignedIn() && (request.auth.uid == userId || request.auth.token.email == resource.data.email || (isManager() && getMyFarmId() == resource.data.farmId) || isSuperAdmin());
+      allow write: if (isSignedIn() && request.auth.uid == userId && (resource == null || !('farmId' in resource.data) || resource.data.farmId == null)) || (isAdmin() && getMyFarmId() == resource.data.farmId) || isSuperAdmin();
+      allow create: if isSignedIn(); // Allow profile creation for signup and Admin for invites
+    }
+
+    // Farms Collection
+    match /farms/{farmId} {
+      allow read: if isMemberOf(farmId) || isSuperAdmin();
+      allow create: if isSignedIn(); // Allow first user or Admin
+      allow update: if (isAdmin() && isMemberOf(farmId)) || isSuperAdmin();
+      allow delete: if isSuperAdmin();
+    }
+
+    // Core Farm Modules - Tethered by farmId field
+    match /fields/{id} {
+      allow read: if isWorker() && isMemberOf(resource.data.farmId);
+      allow write: if isManager() && isMemberOf(request.resource.data.farmId);
+    }
+    match /livestock/{id} {
+      allow read: if isWorker() && isMemberOf(resource.data.farmId);
+      allow write: if isManager() && isMemberOf(request.resource.data.farmId);
+    }
+    match /equipment/{id} {
+      allow read: if isWorker() && isMemberOf(resource.data.farmId);
+      allow write: if isManager() && isMemberOf(request.resource.data.farmId);
+    }
+    match /inventory/{id} {
+      allow read: if isWorker() && isMemberOf(resource.data.farmId);
+      allow write: if isManager() && isMemberOf(request.resource.data.farmId);
+    }
+    match /workers/{id} {
+      allow read: if isWorker() && isMemberOf(resource.data.farmId);
+      allow write: if isManager() && isMemberOf(request.resource.data.farmId);
+    }
+    match /tasks/{id} {
+      allow read: if isWorker() && isMemberOf(resource.data.farmId);
+      allow write: if isWorker() && isMemberOf(request.resource.data.farmId);
+    }
+    match /payroll/{id} {
+      allow read: if isManager() && isMemberOf(resource.data.farmId);
+      allow create: if isManager() && isMemberOf(request.resource.data.farmId);
+      allow update, delete: if isManager() && isMemberOf(resource.data.farmId);
+    }
+
+    // Financials - Tethered by Document ID as farmId or farmId field
+    match /financials/{farmId} {
+      allow read, write: if isManager() && (request.auth.uid != null && (farmId == getMyFarmId()));
+    }
+
+    // Activity Feed
+    match /activities/{id} {
+      allow read: if isMemberOf(resource.data.farmId) && (isManager() || (isWorker() && resource.data.visibility != 'Sensitive'));
+      allow create: if isWorker() && isMemberOf(request.resource.data.farmId);
+      allow update, delete: if isManager() && isMemberOf(resource.data.farmId);
+    }
+    
+    // System Logs
+    match /logs/{id} {
+      allow read: if isAdmin(); // System wide check
+      allow create: if isSignedIn();
+    }
+
+    // Metadata
+    match /metadata/{document=**} {
+      allow read: if true;
+      allow write: if isSignedIn(); // Allow setup
+    }
+  }
+}

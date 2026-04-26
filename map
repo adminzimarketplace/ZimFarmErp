@@ -1,0 +1,36 @@
+As a seasoned developer, I've seen many ERP projects succeed by following a clear, modular roadmap. Now that we have the core Role-Based Access Control and basic farm modules in place, here is how I suggest we move forward to turn this into a truly professional, high-value tool for your farm.
+
+### Phase 1: Stability & Production Readiness (High Priority)
+Before adding "shiny" features, we should make the current foundation rock-solid:
+*   **Restore & Harden Security**: Move away from the temporary "Public/Bypass" mode. We should re-enable strict Firestore rules and properly implement the **Admin-only user creation** (Phase 3 we discussed).
+*   **Audit Logs**: Implement a `logs` collection that records who changed what and when. In an ERP, knowing who updated the inventory or recorded an expense is critical for accountability.
+*   **Automated Backups**: Ensure that your Firestore data is being backed up regularly.
+
+### Phase 2: Advanced Financial Intelligence
+You have basic balance tracking; now we turn it into an accounting engine:
+*   **Cash Flow Forecasting**: Use previous months' data to predict upcoming expenses (e.g., upcoming fertilizer needs vs. expected crop sale dates).
+*   **Payroll & Piecework (Maricho)**: A dedicated module to manage casual labor payments, linking them directly to specific fields to calculate exact **Cost per Hectare**.
+*   **Multi-Currency Logic**: Improve handling of ZiG vs USD, including historical exchange rate logs so financial reports stay accurate even if rates fluctuate.
+
+### Phase 3: Resource & Field Optimization
+Moving from "logging data" to "providing insights":
+*   **GPS Field Mapping**: Allow the Admin to mark field boundaries on a map.
+*   **Crop Cycles**: Create automated schedules for fields (e.g., "Field A: Planted Maize on Oct 1 -> Remind Manager to apply Top Dressing on 30 Nov").
+*   **Inventory Trigger Levels**: Set "Low Stock" alerts. If Diesel falls below 100L, the Admin gets a dashboard notification.
+
+### Phase 4: Mobile & Offline Excellence (PWA+)
+Since farms often have poor connectivity:
+*   **Offline-First Refinement**: Ensure the app works seamlessly for days without internet, syncing everything automatically once the Manager returns to the farmhouse/town.
+*   **Push Notifications**: Send alerts to Workers' phones for assigned tasks.
+
+---
+
+### My Recommendation for Right Now:
+I noticed that some of our **Phase 3 additions** (the Settings page, the "Add User" form, and the Stock fix) were partially removed or reverted during your recent formatting edits.
+
+**Shall we start by re-implementing those Phase 3 features correctly?** I can:
+1.  **Finish the Settings Page**: Full Light/Dark mode, Farm Name editing, and Password reset.
+2.  **Fix the Stock Module**: Ensure you can add and manage inventory items properly.
+3.  **Add the User Creation Form**: So you can officially add your Manager and Worker from the Admin dashboard.
+
+**Would you like me to proceed with finishing these specific features now?**

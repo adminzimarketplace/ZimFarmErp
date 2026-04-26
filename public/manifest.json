@@ -1,0 +1,46 @@
+{
+  "name": "ZimFarm ERP",
+  "short_name": "ZimFarm",
+  "description": "Farming Enterprise Resource Planning for Zimbabwe",
+  "start_url": "/index.html",
+  "display": "standalone",
+  "background_color": "#121614",
+  "theme_color": "#2E8B57",
+  "orientation": "portrait",
+  "categories": [
+    "business",
+    "productivity"
+  ],
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/app-icon.png",
+      "sizes": "1024x1024",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Add Activity",
+      "url": "/index.html?action=add-activity",
+      "icons": [
+        {
+          "src": "/icons/app-icon.png",
+          "sizes": "192x192"
+        }
+      ]
+    }
+  ]
+}

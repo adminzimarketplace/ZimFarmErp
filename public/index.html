@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ZimFarm ERP</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/index.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#2E8B57">
+    <link rel="apple-touch-icon" href="icons/app-icon.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+</head>
+
+<body>
+    <!-- Main App Container -->
+    <div class="app-container">
+        <!-- System Announcement Banner -->
+        <div id="system-announcement-banner" class="hidden" style="background: var(--accent-gold); color: var(--bg-dark); padding: 10px; text-align: center; font-weight: bold; font-size: 0.85rem; border-bottom: 2px solid rgba(0,0,0,0.2); position: relative; z-index: 1000; box-shadow: 0 4px 15px rgba(251,191,36,0.2);">
+            <i class="fa-solid fa-bullhorn" style="margin-right: 8px;"></i>
+            <span id="system-announcement-text">Welcome to ZimFarm...</span>
+            <button onclick="document.getElementById('system-announcement-banner').classList.add('hidden')" style="position: absolute; right: 10px; top: 8px; background: transparent; border: none; color: var(--bg-dark); font-size: 1rem; cursor: pointer;"><i class="fa-solid fa-times"></i></button>
+        </div>
+        <!-- Header -->
+        <header class="app-header">
+            <div class="header-content">
+                <div>
+                    <h1 class="greeting" id="user-greeting">Mangwanani, Boss</h1>
+                    <p class="date" id="current-date">Fetching date...</p>
+                </div>
+                <div class="profile-avatar" id="user-profile" style="display: flex; align-items: center; gap: 12px;">
+                    <div style="text-align: right;">
+                        <span id="user-name" style="display: block; font-weight: 600; font-size: 0.9rem;">Farmer</span>
+                        <div style="display: flex; justify-content: flex-end; align-items: center; gap: 6px; margin-top: 4px;">
+                            <span id="user-role-badge" class="role-badge" style="margin-top: 0;">Admin</span>
+                            <div id="status-toggle-container" class="hidden" style="display: flex; align-items: center; gap: 4px; background: rgba(0,0,0,0.3); border-radius: 12px; padding: 2px 6px;">
+                                <div id="worker-presence-indicator" class="presence-dot offline"></div>
+                                <select id="worker-status-select" style="background: transparent; border: none; font-size: 0.7rem; color: var(--text-muted); cursor: pointer; outline: none; padding: 0;">
+                                    <option value="Active" style="background: var(--bg-dark); color: var(--text-main);">Active</option>
+                                    <option value="Break" style="background: var(--bg-dark); color: var(--text-main);">On Break</option>
+                                    <option value="Offline" style="background: var(--bg-dark); color: var(--text-main);">Offline</option>
+                                </select>
+                            </div>
+                        </div>
+                        <button class="logout-btn" id="btn-logout" style="margin-top: 4px;">Logout</button>
+                    </div>
+                    <img src="https://ui-avatars.com/api/?name=Farmer&background=4CAF50&color=fff" alt="Profile"
+                        id="user-avatar">
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content (Home) -->
+        <main id="view-home" class="dashboard view active">
+            <!-- Balances Card -->
+            <!-- Balance Card -->
+            <div class="balance-card glass-card" id="balance-card" data-role="Admin,Manager">
+                <div class="card-header">
+                    <h2>Total Balance</h2>
+                    <div class="currency-toggle">
+                        <span class="active" id="btn-usd">USD</span>
+                        <span id="btn-zig">ZiG</span>
+                    </div>
+                </div>
+                <div class="balance-display">
+                    <h1 class="amount" id="balance-amount">$0.00</h1>
+                    <p class="exchange-rate" id="exchange-rate">Rate: 1 USD = 13.56 ZiG</p>
+                </div>
+            </section>
+
+            <!-- Status Grid (Weather & ZESA) -->
+            <section class="status-grid">
+                <div class="glass-card status-box weather" id="weather-card">
+                    <i class="fa-solid fa-cloud-sun icon" id="weather-icon"></i>
+                    <div>
+                        <h3 id="weather-temp">--°C</h3>
+                        <p id="weather-desc">Loading...</p>
+                    </div>
+                </div>
+                <div class="glass-card status-box zesa off" id="zesa-card" style="cursor: pointer;">
+                    <i class="fa-solid fa-bolt-slash icon" id="zesa-icon"></i>
+                    <div>
+                        <h3 id="zesa-title">ZESA Off</h3>
+                        <p id="zesa-status-text">Gen #1 Running</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Farm Settings Section (Admin Only) -->
+            <section class="quick-actions" data-role="Admin" style="margin-top: 20px;">
+                <div class="section-header">
+                    <h2 class="section-title">Farm Profile</h2>
+                    <span class="view-all" onclick="openFarmSettings()"
+                        style="color: var(--primary-light); cursor: pointer;">
+                        <i class="fa-solid fa-gear"></i> Settings
+                    </span>
+                </div>
+            </section>
+
+            <!-- Quick Actions -->
+            <section class="quick-actions">
+                <h2 class="section-title">Quick Actions</h2>
+                <div class="actions-grid">
+                    <button class="action-btn" onclick="openAction('diesel')">
+                        <div class="icon-wrap diesel"><i class="fa-solid fa-gas-pump"></i></div>
+                        <span>Diesel</span>
+                    </button>
+                    <button class="action-btn" onclick="openAction('labor')">
+                        <div class="icon-wrap labor"><i class="fa-solid fa-users"></i></div>
+                        <span>Maricho</span>
+                    </button>
+                    <button class="action-btn" onclick="openAction('inputs')">
+                        <div class="icon-wrap inputs"><i class="fa-solid fa-seedling"></i></div>
+                        <span>Inputs</span>
+                    </button>
+                    <button id="action-btn-sales" class="action-btn" onclick="openAction('sales')"
+                        data-role="Admin,Manager">
+                        <div class="icon-wrap sales"><i class="fa-solid fa-truck-fast"></i></div>
+                        <span>Sales</span>
+                    </button>
+                    <button id="action-btn-animal" class="action-btn" onclick="openAction('add-animal')"
+                        data-role="Admin,Manager">
+                        <div class="icon-wrap" style="color: #a78bfa;"><i class="fa-solid fa-cow"></i></div>
+                        <span>Animal</span>
+                    </button>
+                </div>
+            </section>
+
+            <!-- Recent Activity -->
+            <section class="recent-activity">
+                <div class="section-header">
+                    <h2 class="section-title">Recent Activity</h2>
+                    <span class="view-all">See All</span>
+                </div>
+                <div class="activity-list" id="activity-list">
+                    <!-- Dynamic activity content loaded here via JS -->
+                </div>
+            </section>
+        </main>
+
+        <!-- Main Content (Fields) -->
+        <main id="view-fields" class="dashboard view hidden">
+            <div class="section-header">
+                <h2 class="section-title">Farm Fields</h2>
+                <span class="view-all" onclick="openAction('add-field')" data-role="Admin,Manager"><i
+                        class="fa-solid fa-plus"></i> Add</span>
+            </div>
+            <div id="fields-list" class="activity-list">
+                <!-- Dynamic field content -->
+            </div>
+        </main>
+
+        <main id="view-stock" class="inventory view hidden">
+            <div class="section-header">
+                <h2 class="section-title">Farm Stock</h2>
+                <span class="view-all" onclick="openAction('receive-stock')" data-role="Admin,Manager"><i
+                        class="fa-solid fa-plus"></i> Add Stock</span>
+            </div>
+            <div id="inventory-list" class="activity-list">
+                <!-- Dynamic stock items loaded here -->
+            </div>
+        </main>
+
+        <!-- Main Content (Equipment) -->
+        <main id="view-equipment" class="dashboard view hidden">
+            <div class="section-header">
+                <h2 class="section-title">Equipment</h2>
+                <span class="view-all" onclick="openAction('add-equipment')" data-role="Admin,Manager"><i
+                        class="fa-solid fa-plus"></i> Add</span>
+            </div>
+            <div id="equipment-list" class="activity-list">
+                <!-- Dynamic equipment items loaded here -->
+            </div>
+        </main>
+
+        <!-- Main Content (Livestock) -->
+        <main id="view-livestock" class="dashboard view hidden">
+            <div class="section-header">
+                <h2 class="section-title">Livestock</h2>
+                <span class="view-all" onclick="openAction('add-animal')" data-role="Admin,Manager"><i
+                        class="fa-solid fa-plus"></i> Add</span>
+            </div>
+            <div id="livestock-list" class="activity-list">
+                <!-- Dynamic livestock items -->
+            </div>
+        </main>
+
+        <!-- Main Content (Reports / Financials) -->
+        <main id="view-reports" class="dashboard view hidden" data-role="Admin,Manager">
+            <div class="section-header" style="margin-bottom:0;">
+                <h2 class="section-title">Financial Reports</h2>
+                <span style="font-size:0.8rem; color:var(--text-muted);" id="report-period-label">This Month</span>
+            </div>
+
+            <!-- Period Toggle -->
+            <div class="report-period-tabs">
+                <button class="report-tab active" data-period="month" id="report-tab-month">Month</button>
+                <button class="report-tab" data-period="quarter" id="report-tab-quarter">Quarter</button>
+                <button class="report-tab" data-period="year" id="report-tab-year">Year</button>
+                <button class="report-tab" data-period="all" id="report-tab-all">All Time</button>
+            </div>
+
+            <!-- P&L Summary Cards -->
+            <div class="pnl-cards">
+                <div class="pnl-card income">
+                    <div class="pnl-icon"><i class="fa-solid fa-arrow-trend-up"></i></div>
+                    <div>
+                        <p class="pnl-label">Total Income</p>
+                        <h3 class="pnl-value" id="report-income">$0.00</h3>
+                    </div>
+                </div>
+                <div class="pnl-card expense">
+                    <div class="pnl-icon"><i class="fa-solid fa-arrow-trend-down"></i></div>
+                    <div>
+                        <p class="pnl-label">Total Expenses</p>
+                        <h3 class="pnl-value" id="report-expenses">$0.00</h3>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Net Profit Banner -->
+            <div class="glass-card net-profit-card" id="net-profit-card" data-role="Admin,Manager">
+                <div class="net-profit-content">
+                    <div>
+                        <p style="font-size:0.85rem; color:var(--text-muted);">Net Profit / (Loss)</p>
+                        <h2 class="net-profit-value" id="report-net">$0.00</h2>
+                    </div>
+                    <div class="profit-gauge" id="profit-gauge">
+                        <div class="gauge-fill" id="gauge-fill" style="width:0%"></div>
+                    </div>
+                </div>
+                <p style="font-size:0.78rem; color:var(--text-muted); margin-top:8px;" id="report-margin">Margin: 0%</p>
+            </div>
+
+            <!-- Income Breakdown -->
+            <div class="glass-card report-section" data-role="Admin,Manager">
+                <h3 class="report-section-title"><i class="fa-solid fa-circle-arrow-up"
+                        style="color:var(--primary-light);"></i> Income Breakdown</h3>
+                <div id="income-breakdown" class="breakdown-list"></div>
+            </div>
+
+            <!-- Expense Breakdown -->
+            <div class="glass-card report-section" data-role="Admin,Manager">
+                <h3 class="report-section-title"><i class="fa-solid fa-circle-arrow-down"
+                        style="color:var(--accent-danger);"></i> Expense Breakdown</h3>
+                <div id="expense-breakdown" class="breakdown-list"></div>
+            </div>
+
+            <!-- Recent Transactions -->
+            <div class="glass-card report-section" data-role="Admin,Manager">
+                <h3 class="report-section-title"><i class="fa-solid fa-receipt" style="color:var(--accent-gold);"></i>
+                    Transaction Log</h3>
+                <div id="transaction-log" class="breakdown-list"></div>
+            </div>
+        </main>
+
+        <!-- Main Content (Labor & Team) -->
+        <main id="view-labor" class="dashboard view hidden" data-role="Admin,Manager">
+            <div class="section-header" style="margin-bottom:0;">
+                <h2 class="section-title">Team & Labor</h2>
+            </div>
+
+            <!-- Labor Tabs -->
+            <div class="report-period-tabs" style="margin-top: 15px;">
+                <button class="report-tab active" id="tab-workers">Workers</button>
+                <button class="report-tab" id="tab-tasks">Tasks</button>
+                <button class="report-tab" id="tab-payroll">Payroll</button>
+                <button class="report-tab" id="tab-app-users" data-role="Admin">App Users</button>
+            </div>
+
+            <!-- Workers Section -->
+            <div id="labor-sec-workers" class="labor-section">
+                <div class="section-header" style="margin-top: 15px;">
+                    <h3 class="section-title" style="font-size: 1.1rem;">Worker Registry</h3>
+                    <span class="view-all" onclick="openAction('add-worker')" data-role="Admin,Manager"><i
+                            class="fa-solid fa-plus"></i> Add</span>
+                </div>
+                <div id="workers-list" class="activity-list"></div>
+            </div>
+
+            <!-- Tasks Section -->
+            <div id="labor-sec-tasks" class="labor-section hidden">
+                <div class="section-header" style="margin-top: 15px;">
+                    <h3 class="section-title" style="font-size: 1.1rem;">Assigned Tasks</h3>
+                    <span class="view-all" onclick="openAction('assign-task')" data-role="Admin,Manager"><i
+                            class="fa-solid fa-plus"></i> Assign</span>
+                </div>
+                <div id="tasks-list" class="activity-list"></div>
+            </div>
+
+            <!-- Payroll Section -->
+            <div id="labor-sec-payroll" class="labor-section hidden">
+                <div class="section-header" style="margin-top: 15px;">
+                    <h3 class="section-title" style="font-size: 1.1rem;">Payroll & Wages</h3>
+                    <span class="view-all" onclick="openAction('pay-wage')" data-role="Admin"><i
+                            class="fa-solid fa-money-bill"></i> Pay</span>
+                </div>
+                <div id="payroll-list" class="activity-list"></div>
+            </div>
+
+            <!-- App Users Section -->
+            <div id="labor-sec-app-users" class="labor-section hidden" data-role="Admin">
+                <div class="section-header" style="margin-top: 15px;">
+                    <h3 class="section-title" style="font-size: 1.1rem;">System Users</h3>
+                    <span class="view-all" onclick="openAction('invite-user')" data-role="Admin"><i
+                            class="fa-solid fa-user-plus"></i> Invite</span>
+                </div>
+                <div id="users-list" class="activity-list">
+                    <!-- Dynamic user list -->
+                </div>
+            </div>
+        </main>
+
+        <!-- Main Content (Executive Dashboard) -->
+        <main id="view-executive" class="dashboard view hidden">
+            <div class="section-header" style="margin-bottom:0;">
+                <h2 class="section-title"><i class="fa-solid fa-server" style="color:var(--primary-light); margin-right:8px;"></i>Executive Console</h2>
+            </div>
+            
+            <!-- Metrics Cards -->
+            <div class="pnl-cards" style="margin-top: 15px;">
+                <div class="pnl-card" style="background: rgba(46,139,87,0.1);">
+                    <div class="pnl-icon" style="color:var(--primary-light);"><i class="fa-solid fa-tractor"></i></div>
+                    <div>
+                        <p class="pnl-label">Reg. Farms</p>
+                        <h3 class="pnl-value" id="exec-total-farms">0</h3>
+                    </div>
+                </div>
+                <div class="pnl-card" style="background: rgba(255,255,255,0.05);">
+                    <div class="pnl-icon"><i class="fa-solid fa-users"></i></div>
+                    <div>
+                        <p class="pnl-label">Total Users</p>
+                        <h3 class="pnl-value" id="exec-total-users">0</h3>
+                    </div>
+                </div>
+            </div>
+
+            <!-- System Announcements Control -->
+            <div class="glass-card report-section" style="margin-top:20px;">
+                <h3 class="report-section-title"><i class="fa-solid fa-bullhorn" style="color:var(--accent-gold);"></i> System Announcement</h3>
+                <div style="margin-top: 10px; display: flex; gap: 8px;">
+                    <input type="text" id="exec-announcement-input" placeholder="Type a message to broadcast to all users..." style="flex:1; background:var(--bg-dark); border:1px solid var(--border-glass); color:var(--text-main); padding:10px; border-radius:8px;">
+                    <button onclick="publishAnnouncement()" style="background:var(--accent-gold); color:var(--bg-dark); border:none; padding:10px 16px; border-radius:8px; font-weight:bold; cursor:pointer;">Publish</button>
+                </div>
+                <div id="exec-announcement-status" style="margin-top:8px; font-size:0.8rem; color:var(--text-muted);">Current: <span id="current-announcement-display" style="color:var(--primary-light);">None</span></div>
+                <button onclick="clearAnnouncement()" style="margin-top: 10px; background:transparent; color:var(--text-muted); border:1px solid var(--border-glass); padding:6px 12px; border-radius:8px; font-size:0.75rem; cursor:pointer;">Clear Announcement</button>
+            </div>
+
+            <!-- Global Farm Directory -->
+            <div class="glass-card report-section" style="margin-top:20px;">
+                <h3 class="report-section-title"><i class="fa-solid fa-network-wired" style="color:var(--primary-light);"></i> Farm Directory</h3>
+                <div id="exec-farm-list" class="activity-list" style="margin-top: 10px; max-height: 400px; overflow-y: auto; padding-right: 5px;">
+                    <!-- Injected via JS -->
+                </div>
+            </div>
+
+            <!-- Global Users Directory -->
+            <div class="glass-card report-section" style="margin-top:20px;">
+                <h3 class="report-section-title"><i class="fa-solid fa-users" style="color:var(--primary-light);"></i> Registered Users</h3>
+                <div id="exec-user-list" class="activity-list" style="margin-top: 10px; max-height: 400px; overflow-y: auto; padding-right: 5px;">
+                    <!-- Injected via JS -->
+                </div>
+            </div>
+        </main>
+        <!-- Bottom Navigation -->
+        <nav class="bottom-nav">
+            <a href="#" class="nav-item active" data-target="view-home">
+                <i class="fa-solid fa-house"></i>
+                <span>Home</span>
+            </a>
+            <a href="#" class="nav-item" data-target="view-fields">
+                <i class="fa-solid fa-map"></i>
+                <span>Fields</span>
+            </a>
+            <a href="#" class="nav-item" data-target="view-livestock">
+                <i class="fa-solid fa-cow"></i>
+                <span>Livestock</span>
+            </a>
+            <a href="#" class="nav-item" data-target="view-stock">
+                <i class="fa-solid fa-boxes-stacked"></i>
+                <span>Stock</span>
+            </a>
+            <a href="#" class="nav-item" data-target="view-equipment">
+                <i class="fa-solid fa-tractor"></i>
+                <span>Equipment</span>
+            </a>
+            <a href="#" class="nav-item" data-target="view-reports" data-role="Admin,Manager">
+                <i class="fa-solid fa-chart-pie"></i>
+                <span>Reports</span>
+            </a>
+            <a href="#" class="nav-item" data-target="view-labor" data-role="Admin,Manager">
+                <i class="fa-solid fa-users-gear"></i>
+                <span>Team</span>
+            </a>
+            <a href="#" class="nav-item hidden" data-target="view-executive" id="nav-executive">
+                <i class="fa-solid fa-shield-halved" style="color: var(--primary-light);"></i>
+                <span>Executive</span>
+            </a>
+        </nav>
+    </div>
+
+    <!-- Farm Profile Modal -->
+    <div id="modal-edit-farm" class="login-overlay hidden">
+        <div class="glass-card login-card" style="max-width: 420px; width: 90%; max-height: 90vh; overflow-y: auto;">
+            <div class="card-header" style="padding: 20px 24px 0;">
+                <h2>Farm Settings</h2>
+                <i class="fa-solid fa-xmark close-modal" onclick="closeAction('edit-farm')"
+                    style="font-size:1.4rem; cursor:pointer; color:var(--text-muted);"></i>
+            </div>
+            <form id="farm-settings-form" style="padding: 20px 24px 32px;">
+                <div class="form-group">
+                    <label>Farm Name</label>
+                    <input type="text" id="farm-name-input" placeholder="ZimFarm Alpha">
+                </div>
+                <div class="form-group">
+                    <label>Location (City/Region)</label>
+                    <select id="farm-location-input">
+                        <option value="harare">Harare</option>
+                        <option value="bulawayo">Bulawayo</option>
+                        <option value="mutare">Mutare</option>
+                        <option value="gweru">Gweru</option>
+                        <option value="kwekwe">Kwekwe</option>
+                        <option value="masvingo">Masvingo</option>
+                        <option value="chinhoyi">Chinhoyi</option>
+                        <option value="bindura">Bindura</option>
+                        <option value="marondera">Marondera</option>
+                        <option value="zvishavane">Zvishavane</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Fallback ZiG Rate (USD to ZiG)</label>
+                    <input type="number" id="farm-rate-input" step="0.01" placeholder="24.63">
+                </div>
+
+                <!-- Profile Section -->
+                <div class="module-section">
+                    <h3 class="module-section-title"><i class="fa-solid fa-user-pen"></i> Your Profile</h3>
+                    <div class="form-group">
+                        <label>Display Name</label>
+                        <input type="text" id="user-display-name-input" placeholder="e.g. John Doe">
+                    </div>
+                    <div class="form-group" style="margin-top: 15px;">
+                        <button type="button" id="btn-reset-password" class="auth-btn" style="background: transparent; border: 1px solid var(--primary-light); color: var(--primary-light); width: 100%; padding: 8px; font-size: 0.9rem;">
+                            <i class="fa-solid fa-key" style="margin-right: 6px;"></i> Send Password Reset Email
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Sales Commodities Section -->
+                <div class="module-section">
+                    <h3 class="module-section-title"><i class="fa-solid fa-store"></i> Sales Commodities</h3>
+                    <p style="font-size:0.82rem; color:var(--text-muted); margin-bottom:12px;">List the crops or
+                        products your farm sells. Separate each with a comma.</p>
+                    <div class="form-group">
+                        <label>Crops &amp; Products</label>
+                        <textarea id="farm-commodities-input"
+                            placeholder="e.g. Tobacco, Maize, Soyabeans, Broilers, Eggs" rows="3"
+                            style="width:100%; background:rgba(255,255,255,0.05); border:1px solid var(--border-glass); color:var(--text-main); padding:12px 16px; border-radius:12px; font-size:1rem; font-family:inherit; outline:none; resize:none; transition:border-color 0.2s;"
+                            onfocus="this.style.borderColor='var(--primary-green)'"
+                            onblur="this.style.borderColor='var(--border-glass)'"></textarea>
+                    </div>
+                </div>
+
+                <!-- Stock Item Registry Section -->
+                <div class="module-section">
+                    <h3 class="module-section-title"><i class="fa-solid fa-boxes-stacked"></i> Stock Item Registry</h3>
+                    <p style="font-size:0.82rem; color:var(--text-muted); margin-bottom:12px;">Define items you
+                        typically receive in stock. Separate each with a comma.</p>
+                    <div class="form-group">
+                        <label>Stock Items</label>
+                        <textarea id="farm-stock-registry-input"
+                            placeholder="e.g. Diesel, Compound D, AN Fertilizer, Maize Seed" rows="3"
+                            style="width:100%; background:rgba(255,255,255,0.05); border:1px solid var(--border-glass); color:var(--text-main); padding:12px 16px; border-radius:12px; font-size:1rem; font-family:inherit; outline:none; resize:none; transition:border-color 0.2s;"
+                            onfocus="this.style.borderColor='var(--primary-green)'"
+                            onblur="this.style.borderColor='var(--border-glass)'"></textarea>
+                    </div>
+                </div>
+
+                <!-- Module Management Section -->
+                <div class="module-section">
+                    <h3 class="module-section-title">
+                        <i class="fa-solid fa-puzzle-piece"></i> Active Modules
+                    </h3>
+                    <p style="font-size:0.82rem; color:var(--text-muted); margin-bottom:16px;">Toggle which farm modules
+                        appear in your dashboard. Disabled modules are hidden but data is preserved.</p>
+                    <div class="module-toggles">
+                        <label class="module-toggle-row">
+                            <div class="module-toggle-info">
+                                <i class="fa-solid fa-map" style="color:#4ade80;"></i>
+                                <span>Fields & Crops</span>
+                            </div>
+                            <div class="toggle-switch">
+                                <input type="checkbox" id="module-toggle-fields" checked>
+                                <span class="toggle-slider"></span>
+                            </div>
+                        </label>
+                        <label class="module-toggle-row">
+                            <div class="module-toggle-info">
+                                <i class="fa-solid fa-cow" style="color:#a78bfa;"></i>
+                                <span>Livestock</span>
+                            </div>
+                            <div class="toggle-switch">
+                                <input type="checkbox" id="module-toggle-livestock" checked>
+                                <span class="toggle-slider"></span>
+                            </div>
+                        </label>
+                        <label class="module-toggle-row">
+                            <div class="module-toggle-info">
+                                <i class="fa-solid fa-tractor" style="color:#fb923c;"></i>
+                                <span>Equipment</span>
+                            </div>
+                            <div class="toggle-switch">
+                                <input type="checkbox" id="module-toggle-equipment" checked>
+                                <span class="toggle-slider"></span>
+                            </div>
+                        </label>
+                        <label class="module-toggle-row">
+                            <div class="module-toggle-info">
+                                <i class="fa-solid fa-boxes-stacked" style="color:#38bdf8;"></i>
+                                <span>Stock & Inventory</span>
+                            </div>
+                            <div class="toggle-switch">
+                                <input type="checkbox" id="module-toggle-stock" checked>
+                                <span class="toggle-slider"></span>
+                            </div>
+                        </label>
+                        <label class="module-toggle-row">
+                            <div class="module-toggle-info">
+                                <i class="fa-solid fa-users-gear" style="color:#f43f5e;"></i>
+                                <span>Team & Labor</span>
+                            </div>
+                            <div class="toggle-switch">
+                                <input type="checkbox" id="module-toggle-labor" checked>
+                                <span class="toggle-slider"></span>
+                            </div>
+                        </label>
+                        <label class="module-toggle-row">
+                            <div class="module-toggle-info">
+                                <i class="fa-solid fa-dollar-sign" style="color:#fbbf24;"></i>
+                                <span>Financials & Balance</span>
+                            </div>
+                            <div class="toggle-switch">
+                                <input type="checkbox" id="module-toggle-financials" checked>
+                                <span class="toggle-slider"></span>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <button type="submit" class="auth-btn" style="width:100%; margin-top:20px;">Update Farm
+                    Settings</button>
+            </form>
+        </div>
+    </div>
+    <!-- Email Verification Overlay -->
+    <div id="verification-overlay" class="login-overlay hidden" style="z-index: 10003; background: var(--bg-dark);">
+        <div class="glass-card login-card" style="text-align: center;">
+            <i class="fa-solid fa-envelope-open-text logo" style="color: var(--primary-light);"></i>
+            <h2>Verify Your Email</h2>
+            <p style="margin-top: 15px; color: var(--text-muted); font-size: 0.95rem;">
+                We've sent a verification link to your email address. Please click the link to activate your account.
+            </p>
+            <button id="btn-check-verification" class="auth-btn" style="width: 100%; margin-top: 25px;">I have verified my email</button>
+            <button id="btn-logout-verify" class="auth-btn" style="width: 100%; margin-top: 10px; background: transparent; border: 1px solid var(--border-glass); color: var(--text-muted);">Log Out</button>
+        </div>
+    </div>
+    
+    <!-- Login Overlay -->
+    <div id="login-overlay" class="login-overlay hidden">
+        <div class="glass-card login-card">
+            <i class="fa-solid fa-tractor logo"></i>
+            <h2>ZimFarm ERP</h2>
+
+            <div id="login-section">
+                <p style="margin-bottom: 24px;">Welcome back, farmer!</p>
+                <form id="login-form">
+                    <div class="form-group">
+                        <label>Username or Email Address</label>
+                        <input type="text" id="login-email" placeholder="johndoe@zimfarm.co.zw" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Password</label>
+                        <input type="password" id="login-password" placeholder="••••••••" required>
+                    </div>
+                    <div id="auth-error" class="auth-error"></div>
+                    <button type="submit" class="btn-submit" style="margin-top: 10px; width: 100%;">Sign In</button>
+                </form>
+                <p style="margin-top: 20px; font-size: 0.9rem; color: var(--text-muted);">
+                    Don't have an account? <a href="#" id="link-to-signup" style="color: var(--primary-light); text-decoration: none; font-weight: 600;">Sign up here</a>
+                </p>
+            </div>
+
+            <div id="signup-section" class="hidden">
+                <p style="margin-bottom: 24px;">Start your farm digital journey</p>
+                <form id="signup-form">
+                    <div class="form-group">
+                        <label>Full Name</label>
+                        <input type="text" id="signup-name" placeholder="John Doe" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Email Address</label>
+                        <input type="email" id="signup-email" placeholder="farmer@zimfarm.co.zw" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Password</label>
+                        <input type="password" id="signup-password" placeholder="Min 6 characters" minlength="6" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Confirm Password</label>
+                        <input type="password" id="signup-password-confirm" placeholder="Match your password" minlength="6" required>
+                    </div>
+                    <div id="signup-error" class="auth-error"></div>
+                    <button type="submit" class="btn-submit" style="margin-top: 10px; width: 100%;">Create Account</button>
+                </form>
+                <p style="margin-top: 20px; font-size: 0.9rem; color: var(--text-muted);">
+                    Already have an account? <a href="#" id="link-to-login" style="color: var(--primary-light); text-decoration: none; font-weight: 600;">Sign in here</a>
+                </p>
+            </div>
+
+            <div class="login-footer">
+                <p>&copy; 2026 ZimFarm Solutions</p>
+            </div>
+        </div>
+    </div>
+    </div>
+
+    <!-- Pending Approval / Blackout Overlay -->
+    <div id="blackout-overlay" class="login-overlay hidden" style="z-index: 10001; background: var(--bg-dark);">
+        <div class="glass-card login-card" style="text-align: center;">
+            <i class="fa-solid fa-lock logo" style="color: var(--accent-danger);"></i>
+            <h2>Pending Approval</h2>
+            <p style="margin-top: 15px; color: var(--text-muted); font-size: 0.95rem;">You have not been assigned to a
+                Farm yet, or your invite is pending Admin approval. Please contact the Farm Admin to invite you or
+                approve your access.</p>
+            <div id="blackout-diag"
+                style="margin-top: 10px; font-family: monospace; font-size: 0.75rem; color: var(--accent-danger); opacity: 0.7;">
+            </div>
+            <button id="btn-logout-blackout" class="auth-btn"
+                style="width: 100%; margin-top: 25px; background: var(--surface-light); color: var(--text-light);">Log
+                Out</button>
+        </div>
+    </div>
+
+    <!-- Setup Wizard Modal -->
+    <div id="setup-wizard-modal" class="login-overlay hidden" style="z-index: 10002; background: var(--bg-dark);">
+        <div class="glass-card login-card" style="max-height: 90vh; overflow-y: auto;">
+            <i class="fa-solid fa-seedling logo"></i>
+            <h2>Farm Setup</h2>
+            <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 20px;">Welcome! Set up a new farm or
+                join an existing one.</p>
+
+            <div class="auth-tabs">
+                <button id="tab-setup-create" class="auth-tab active">Create New</button>
+                <button id="tab-setup-join" class="auth-tab">Join Existing</button>
+            </div>
+
+            <form id="setup-wizard-form">
+                <div class="form-group" style="text-align: left;">
+                    <label>Farm Name</label>
+                    <input type="text" id="wizard-farm-name" placeholder="e.g. Green Valley Farm" required>
+                </div>
+                <div class="form-group" style="text-align: left;">
+                    <label>Currency</label>
+                    <select id="wizard-farm-currency" required>
+                        <option value="USD">USD ($)</option>
+                        <option value="ZiG">ZiG (ZWG)</option>
+                        <option value="ZAR">Rand (R)</option>
+                    </select>
+                </div>
+                <div class="form-group" style="text-align: left;">
+                    <label>Location / Region (For Weather)</label>
+                    <select id="wizard-farm-location" required>
+                        <option value="harare">Harare</option>
+                        <option value="bulawayo">Bulawayo</option>
+                        <option value="mutare">Mutare</option>
+                        <option value="gweru">Gweru</option>
+                        <option value="kwekwe">Kwekwe</option>
+                        <option value="masvingo">Masvingo</option>
+                        <option value="chinhoyi">Chinhoyi</option>
+                        <option value="bindura">Bindura</option>
+                        <option value="marondera">Marondera</option>
+                        <option value="zvishavane">Zvishavane</option>
+                    </select>
+                </div>
+                
+                <div class="form-group" style="text-align: left;">
+                    <label>Land Size Unit</label>
+                    <select id="wizard-farm-land-unit" required>
+                        <option value="Hectares">Hectares (ha)</option>
+                        <option value="Acres">Acres (ac)</option>
+                    </select>
+                </div>
+                
+                <div class="form-group" style="text-align: left;">
+                    <label>Farm Template</label>
+                    <select id="wizard-farm-template" required onchange="window.applyTemplate(this.value)">
+                        <option value="custom">Custom (Blank Canvas)</option>
+                        <option value="tobacco_maize">Tobacco & Maize Farm</option>
+                        <option value="poultry">Poultry Operation</option>
+                        <option value="livestock">Cattle & Livestock Ranch</option>
+                    </select>
+                </div>
+
+                <!-- Sales Commodities Checklist -->
+                <div style="text-align: left; margin-top: 16px;">
+                    <label
+                        style="font-size:0.92rem; font-weight:600; margin-bottom:8px; display:flex; align-items:center; gap:8px; color:var(--primary-light);"><i
+                            class="fa-solid fa-store"></i> What do you sell?</label>
+                    <p style="font-size:0.78rem; color:var(--text-muted); margin-bottom:10px;">Select all products your
+                        farm sells.</p>
+                    <div id="wizard-commodities-list"
+                        style="display:grid; grid-template-columns:1fr 1fr; gap:6px; max-height:180px; overflow-y:auto; padding:4px;">
+                    </div>
+                </div>
+
+                <!-- Stock Item Checklist -->
+                <div style="text-align: left; margin-top: 16px;">
+                    <label
+                        style="font-size:0.92rem; font-weight:600; margin-bottom:8px; display:flex; align-items:center; gap:8px; color:var(--primary-light);"><i
+                            class="fa-solid fa-boxes-stacked"></i> What stock do you receive?</label>
+                    <p style="font-size:0.78rem; color:var(--text-muted); margin-bottom:10px;">Select items you
+                        typically purchase or receive.</p>
+                    <div id="wizard-stock-list"
+                        style="display:grid; grid-template-columns:1fr 1fr; gap:6px; max-height:180px; overflow-y:auto; padding:4px;">
+                    </div>
+                </div>
+
+                <div class="form-actions" style="margin-top: 20px;">
+                    <button type="submit" class="auth-btn" style="width: 100%;">Create Farm & Workspace</button>
+                </div>
+            </form>
+
+            <form id="join-farm-form" class="hidden">
+                <div class="form-group" style="text-align: left;">
+                    <label>Farm ID Code</label>
+                    <input type="text" id="wizard-join-id" placeholder="e.g. FARM-XXXXXX" required>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="auth-btn" style="width: 100%;">Request to Join</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <!-- Notification Toast (Offline status) -->
+    <div id="offline-toast" class="toast hidden">
+        <i class="fa-solid fa-wifi-slash"></i> You are offline. Changes saved locally.
+    </div>
+
+    <!-- Notification Toast (Success) -->
+    <div id="success-toast" class="toast hidden" style="background: var(--primary-green);">
+        <i class="fa-solid fa-check-circle"></i> <span id="success-message">Saved successfully!</span>
+    </div>
+
+    <!-- Action Modal Bottom Sheet -->
+    <div id="action-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <div class="modal-handle"></div>
+            <h2 id="modal-title">Log Activity</h2>
+            <form id="action-form">
+                <div id="dynamic-fields">
+                    <!-- Fields injected by JS -->
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn-cancel" onclick="closeModal()">Cancel</button>
+                    <button type="submit" class="btn-submit">Save Log</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Firebase SDK (Modular) -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, enableIndexedDbPersistence, getDocs, collection, doc, getDoc, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getAuth } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { initializeAppCheck, ReCaptchaEnterpriseProvider } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app-check.js";
+
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyAcFUMV3i11t13xgDrMIO-spQ_cCdwd5pc",
+            authDomain: "zimfarmerp.firebaseapp.com",
+            projectId: "zimfarmerp",
+            storageBucket: "zimfarmerp.firebasestorage.app",
+            messagingSenderId: "754378232572",
+            appId: "1:754378232572:web:61086d7c87182545647d79"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+
+        // Make 'db', 'auth' globally accessible
+        window.db = db;
+        window.auth = auth;
+        window.firebaseHelpers = { getDocs, collection, doc, getDoc, setDoc, deleteDoc };
+
+        // Enable Offline Persistence
+        enableIndexedDbPersistence(db).catch((err) => {
+            if (err.code == 'failed-precondition') {
+                console.warn("Firestore Persistence failed: Multiple tabs open.");
+            } else if (err.code == 'unimplemented') {
+                console.warn("Firestore Persistence not supported by browser.");
+            }
+        });
+
+        console.log("Firebase, Firestore & Auth Initialized [v4.2.0]");
+    </script>
+
+    <script type="module" src="js/app.js"></script>
+</body>
+
+</html>

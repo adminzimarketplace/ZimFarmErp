@@ -1,0 +1,79 @@
+name: ZimFarm CI/CD
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  deploy_hosting:
+    name: Deploy to Firebase Hosting
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Install Firebase Tools
+        run: npm install -g firebase-tools
+
+      - name: Deploy to Firebase
+        run: firebase deploy --only hosting --token "${{ secrets.FIREBASE_TOKEN }}"
+
+  build_android:
+    name: Build Android APK
+    runs-on: ubuntu-latest
+    needs: deploy_hosting
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Setup Java
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: Install Bubblewrap
+        run: npm install -g @bubblewrap/cli
+
+      - name: Prepare Signing Key
+        run: |
+          if [ -z "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" ]; then
+            echo "No keystore secret found. Generating a temporary development key..."
+            keytool -genkey -v -keystore android.keystore -alias zimfarm -keyalg RSA -keysize 2048 -validity 10000 -storepass changeme -keypass changeme -dname "CN=ZimFarm, OU=IT, O=ZimFarm, L=Harare, S=ZW, C=ZW"
+            echo "KEYSTORE_PASS=changeme" >> $GITHUB_ENV
+            echo "KEY_PASS=changeme" >> $GITHUB_ENV
+            echo "KEY_ALIAS=zimfarm" >> $GITHUB_ENV
+          else
+            echo "Using provided keystore secret..."
+            echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > android.keystore
+            echo "KEYSTORE_PASS=${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" >> $GITHUB_ENV
+            echo "KEY_PASS=${{ secrets.ANDROID_KEY_PASSWORD }}" >> $GITHUB_ENV
+            echo "KEY_ALIAS=${{ secrets.ANDROID_KEY_ALIAS }}" >> $GITHUB_ENV
+          fi
+
+      - name: Build APK with Bubblewrap
+        run: |
+          # Initialize the project from the manifest (non-interactive)
+          bubblewrap init --manifest=twa-manifest.json --directory=./android_project --confirmResign --skipSigning
+          
+          # Move to the project and build
+          cd android_project
+          bubblewrap build --signingKeyPath=../android.keystore --signingKeyAlias=$KEY_ALIAS --signingKeyPassword=$KEY_PASS --signingKeyStorePassword=$KEYSTORE_PASS
+          
+          # Move the APK back to root
+          mv *.apk ../
+        env:
+          BUBBLEWRAP_KEYSTORE_PASSWORD: ${{ env.KEYSTORE_PASS }}
+          BUBBLEWRAP_KEY_PASSWORD: ${{ env.KEY_PASS }}
+
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: ZimFarm-Android-APK
+          path: ./*.apk
