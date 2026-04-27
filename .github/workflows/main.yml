@@ -59,6 +59,7 @@ jobs:
 
       - name: Build APK with Bubblewrap
         run: |
+         yes |
           # Initialize the project from the manifest (non-interactive)
           bubblewrap init --manifest=twa-manifest.json --yes --directory=./android_project --confirmResign --skipSigning
           
