@@ -16,7 +16,7 @@
   "splashscreenFadeOutDuration": 300,
   "signingKey": {
     "path": "./android.keystore",
-    "alias": "android"
+    "alias": "zimfarm"
   },
   "appVersionName": "1.0.0",
   "appVersionCode": 1,

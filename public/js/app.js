@@ -177,7 +177,7 @@ function initAuth() {
                     const setupWizardModal = document.getElementById('setup-wizard-modal');
                     if (setupWizardModal) setupWizardModal.classList.add('hidden');
                     
-                    // Start polling for verification
+                    // 1. Start polling for verification
                     const pollInterval = setInterval(async () => {
                         if (state.user) {
                             await state.user.reload();
@@ -189,7 +189,35 @@ function initAuth() {
                             clearInterval(pollInterval);
                         }
                     }, 3000);
+
+                    // 2. Logout Handler
+                    const logoutVerifyBtn = document.getElementById('btn-logout-verify');
+                    if (logoutVerifyBtn) {
+                        logoutVerifyBtn.onclick = () => signOut(window.auth).then(() => location.reload());
+                    }
                     
+                    // 3. Resend Verification Handler
+                    const resendBtn = document.getElementById('btn-resend-verification');
+                    if (resendBtn) {
+                        resendBtn.onclick = async () => {
+                            try {
+                                await sendEmailVerification(state.user);
+                                resendBtn.disabled = true;
+                                resendBtn.textContent = "Sent! Wait 60s...";
+                                resendBtn.style.opacity = "0.5";
+                                setTimeout(() => {
+                                    resendBtn.disabled = false;
+                                    resendBtn.textContent = "Resend Verification Link";
+                                    resendBtn.style.opacity = "1";
+                                }, 60000);
+                                showSuccessToast("Verification email resent!");
+                            } catch (err) {
+                                console.error("Resend failed:", err);
+                                alert("Error resending email: " + err.message);
+                            }
+                        };
+                    }
+
                     if (document.getElementById('initial-loader')) document.getElementById('initial-loader').classList.add('hidden');
                     return;
                 }
@@ -537,18 +565,18 @@ function initAuth() {
             }
 
             try {
-                const setupDocRef = window.firebaseHelpers.doc(window.db, "metadata", "setup");
-                const setupSnap = await window.firebaseHelpers.getDoc(setupDocRef);
-                const isFirstUser = !setupSnap.exists();
-                
-                // Check if this email was pre-invited before creating account
-                const inviteDocRef = window.firebaseHelpers.doc(window.db, "users", "invite-" + email);
-                const inviteSnap = await window.firebaseHelpers.getDoc(inviteDocRef);
-                
                 const userCredential = await createUserWithEmailAndPassword(window.auth, email, pass);
                 const user = userCredential.user;
                 const userProfileRef = doc(window.db, "users", user.uid);
                 
+                // Now authenticated, we can check for setup and invites
+                const setupDocRef = window.firebaseHelpers.doc(window.db, "metadata", "setup");
+                const setupSnap = await window.firebaseHelpers.getDoc(setupDocRef);
+                const isFirstUser = !setupSnap.exists();
+                
+                const inviteDocRef = window.firebaseHelpers.doc(window.db, "users", "invite-" + email);
+                const inviteSnap = await window.firebaseHelpers.getDoc(inviteDocRef);
+
                 if (inviteSnap.exists()) {
                     // Invited user - pre-populate their profile from invite data
                     const inviteData = inviteSnap.data();
@@ -557,7 +585,7 @@ function initAuth() {
                         uid: user.uid,
                         name: name || inviteData.name,
                         email: email,
-                        status: 'Pending', // Still needs Admin approval
+                        status: 'Active', // Auto-activate if invited
                         joinedAt: new Date().toISOString()
                     });
                     // Clean up placeholder invite doc

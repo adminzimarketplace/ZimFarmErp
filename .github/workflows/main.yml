@@ -25,21 +25,27 @@ jobs:
     needs: deploy_hosting
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Setup Java
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
 
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: 20
 
       - name: Install Bubblewrap
         run: npm install -g @bubblewrap/cli
+
+      - name: Configure Bubblewrap
+        run: |
+          mkdir -p ~/.bubblewrap
+          echo "{\"jdkPath\":\"${JAVA_HOME}\",\"androidSdkPath\":\"${ANDROID_SDK_ROOT}\"}" > ~/.bubblewrap/config.json
+          bubblewrap doctor
 
       - name: Prepare Signing Key
         run: |
@@ -52,7 +58,7 @@ jobs:
           else
             echo "Using provided keystore secret..."
             echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > android.keystore
-            echo "KEYSTORE_PASS=${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" >> $GITHUB_ENV
+            echo "KEYSTORE_PASS=${{ secrets.ANDROID_KEY_STORE_PASSWORD }}" >> $GITHUB_ENV
             echo "KEY_PASS=${{ secrets.ANDROID_KEY_PASSWORD }}" >> $GITHUB_ENV
             echo "KEY_ALIAS=${{ secrets.ANDROID_KEY_ALIAS }}" >> $GITHUB_ENV
           fi
@@ -67,8 +73,9 @@ jobs:
           cd android_project
           bubblewrap build --signingKeyPath=../android.keystore --signingKeyAlias=$KEY_ALIAS --signingKeyPassword=$KEY_PASS --signingKeyStorePassword=$KEYSTORE_PASS
           
-          # Move the APK back to root
-          mv *.apk ../
+          # Move the APK and AAB back to root
+          mv app-release-signed.apk ../ZimFarm-Release.apk || mv *.apk ../
+          mv app-release-bundle.aab ../ZimFarm-Release.aab || mv *.aab ../
         env:
           BUBBLEWRAP_KEYSTORE_PASSWORD: ${{ env.KEYSTORE_PASS }}
           BUBBLEWRAP_KEY_PASSWORD: ${{ env.KEY_PASS }}
@@ -76,5 +83,7 @@ jobs:
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ZimFarm-Android-APK
-          path: ./*.apk
+          name: ZimFarm-Android-Resources
+          path: |
+            ./*.apk
+            ./*.aab
