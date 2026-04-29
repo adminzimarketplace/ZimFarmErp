@@ -60,9 +60,9 @@ jobs:
 
       - name: Configure Bubblewrap
         run: |
-          # Use the CLI to set paths instead of manual JSON
-          bubblewrap updateConfig --jdkPath="${JAVA_HOME}" --androidSdkPath="/usr/local/lib/android/sdk"
-          bubblewrap doctor
+          # Use 'no' to skip the usage statistics prompt if it appears
+          # and set the necessary paths for the build
+          echo "no" | bubblewrap updateConfig --jdkPath="${JAVA_HOME}" --androidSdkPath="/usr/local/lib/android/sdk"
 
       - name: Prepare Signing Key
         run: |
