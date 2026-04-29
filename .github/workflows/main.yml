@@ -96,8 +96,8 @@ jobs:
           mkdir -p android_project
           
           # Initialize the project from the manifest (non-interactive)
-          # Note: Bubblewrap sometimes requires --manifest even when --twaManifest is used
-          bubblewrap init --manifest=https://zimfarmerp.web.app/manifest.json --twaManifest=twa-manifest.json --yes --directory=./android_project --confirmResign --skipSigning
+          # We use 'yes "" |' to automatically accept all default prompts from the wizard
+          yes "" | bubblewrap init --manifest=https://zimfarmerp.web.app/manifest.json --twaManifest=twa-manifest.json --yes --directory=./android_project --confirmResign --skipSigning
           
           # Move to the project and build
           cd android_project
