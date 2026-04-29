@@ -92,6 +92,9 @@ jobs:
 
       - name: Build APK with Bubblewrap
         run: |
+          # Pre-create the directory to avoid the (Y/n) prompt from bubblewrap
+          mkdir -p android_project
+          
           # Initialize the project from the manifest (non-interactive)
           bubblewrap init --manifest=twa-manifest.json --yes --directory=./android_project --confirmResign --skipSigning
           
