@@ -96,7 +96,8 @@ jobs:
           mkdir -p android_project
           
           # Initialize the project from the manifest (non-interactive)
-          bubblewrap init --manifest=twa-manifest.json --yes --directory=./android_project --confirmResign --skipSigning
+          # We use --twaManifest because twa-manifest.json is a bubblewrap-specific file
+          bubblewrap init --twaManifest=twa-manifest.json --yes --directory=./android_project --confirmResign --skipSigning
           
           # Move to the project and build
           cd android_project
