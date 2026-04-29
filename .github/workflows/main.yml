@@ -44,17 +44,24 @@ jobs:
       - name: Configure Android SDK
         run: |
           # Ensure absolute paths and license acceptance
-          echo "ANDROID_SDK_ROOT: ${ANDROID_SDK_ROOT}"
-          echo "ANDROID_HOME: ${ANDROID_HOME}"
-          yes | sdkmanager --licenses || true
-          sdkmanager "build-tools;34.0.0" "platforms;android-34" "platform-tools"
+          # On ubuntu-latest, the SDK is at /usr/local/lib/android/sdk
+          export ANDROID_HOME=/usr/local/lib/android/sdk
+          echo "ANDROID_HOME=$ANDROID_HOME" >> $GITHUB_ENV
+          
+          # Add both the latest cmdline-tools and platform-tools to PATH
+          echo "$ANDROID_HOME/cmdline-tools/latest/bin" >> $GITHUB_PATH
+          echo "$ANDROID_HOME/platform-tools" >> $GITHUB_PATH
+          
+          # Accept licenses and install platform components
+          # We use the full path to sdkmanager to be absolutely sure
+          SDK_MANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          yes | $SDK_MANAGER --licenses || true
+          $SDK_MANAGER "build-tools;34.0.0" "platforms;android-34" "platform-tools"
 
       - name: Configure Bubblewrap
         run: |
           # Use the CLI to set paths instead of manual JSON
-          # This handles internal validation better
-          SDK_PATH=${ANDROID_HOME:-${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}}
-          bubblewrap updateConfig --jdkPath="${JAVA_HOME}" --androidSdkPath="${SDK_PATH}"
+          bubblewrap updateConfig --jdkPath="${JAVA_HOME}" --androidSdkPath="/usr/local/lib/android/sdk"
           bubblewrap doctor
 
       - name: Prepare Signing Key
@@ -75,7 +82,6 @@ jobs:
 
       - name: Build APK with Bubblewrap
         run: |
-         no |
           # Initialize the project from the manifest (non-interactive)
           bubblewrap init --manifest=twa-manifest.json --yes --directory=./android_project --confirmResign --skipSigning
           
@@ -84,8 +90,9 @@ jobs:
           bubblewrap build --signingKeyPath=../android.keystore --signingKeyAlias=$KEY_ALIAS --signingKeyPassword=$KEY_PASS --signingKeyStorePassword=$KEYSTORE_PASS
           
           # Move the APK and AAB back to root
-          mv app-release-signed.apk ../ZimFarm-Release.apk || mv *.apk ../
-          mv app-release-bundle.aab ../ZimFarm-Release.aab || mv *.aab ../
+          # We use a wildcard to ensure we catch the output regardless of naming
+          mv -v ./release/*.apk ../ZimFarm-Release.apk || mv -v ./*.apk ../ZimFarm-Release.apk || true
+          mv -v ./release/*.aab ../ZimFarm-Release.aab || mv -v ./*.aab ../ZimFarm-Release.aab || true
         env:
           BUBBLEWRAP_KEYSTORE_PASSWORD: ${{ env.KEYSTORE_PASS }}
           BUBBLEWRAP_KEY_PASSWORD: ${{ env.KEY_PASS }}
