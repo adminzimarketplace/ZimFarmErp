@@ -60,9 +60,19 @@ jobs:
 
       - name: Configure Bubblewrap
         run: |
-          # Use 'no' to skip the usage statistics prompt if it appears
-          # and set the necessary paths for the build
-          echo "no" | bubblewrap updateConfig --jdkPath="${JAVA_HOME}" --androidSdkPath="/usr/local/lib/android/sdk"
+          # Create the config directory
+          mkdir -p ~/.bubblewrap
+          
+          # Manually create the config.json to bypass interactive prompts entirely
+          # We use the standard paths available on the ubuntu-latest runner
+          echo "{
+            \"jdkPath\": \"${JAVA_HOME}\",
+            \"androidSdkPath\": \"/usr/local/lib/android/sdk\"
+          }" > ~/.bubblewrap/config.json
+          
+          # Verify the config exists
+          ls -la ~/.bubblewrap/config.json
+          cat ~/.bubblewrap/config.json
 
       - name: Prepare Signing Key
         run: |
