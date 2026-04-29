@@ -44,7 +44,10 @@ jobs:
       - name: Configure Bubblewrap
         run: |
           mkdir -p ~/.bubblewrap
-          echo "{\"jdkPath\":\"${JAVA_HOME}\",\"androidSdkPath\":\"${ANDROID_SDK_ROOT}\"}" > ~/.bubblewrap/config.json
+          # On ubuntu-latest, ANDROID_HOME is the standard path. 
+          # We use a fallback just in case.
+          SDK_PATH=${ANDROID_HOME:-/usr/local/lib/android/sdk}
+          echo "{\"jdkPath\":\"${JAVA_HOME}\",\"androidSdkPath\":\"${SDK_PATH}\"}" > ~/.bubblewrap/config.json
           bubblewrap doctor
 
       - name: Prepare Signing Key
