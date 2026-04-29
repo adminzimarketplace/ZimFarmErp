@@ -41,13 +41,20 @@ jobs:
       - name: Install Bubblewrap
         run: npm install -g @bubblewrap/cli
 
+      - name: Configure Android SDK
+        run: |
+          # Ensure absolute paths and license acceptance
+          echo "ANDROID_SDK_ROOT: ${ANDROID_SDK_ROOT}"
+          echo "ANDROID_HOME: ${ANDROID_HOME}"
+          yes | sdkmanager --licenses || true
+          sdkmanager "build-tools;34.0.0" "platforms;android-34" "platform-tools"
+
       - name: Configure Bubblewrap
         run: |
-          mkdir -p ~/.bubblewrap
-          # On ubuntu-latest, ANDROID_HOME is the standard path. 
-          # We use a fallback just in case.
-          SDK_PATH=${ANDROID_HOME:-/usr/local/lib/android/sdk}
-          echo "{\"jdkPath\":\"${JAVA_HOME}\",\"androidSdkPath\":\"${SDK_PATH}\"}" > ~/.bubblewrap/config.json
+          # Use the CLI to set paths instead of manual JSON
+          # This handles internal validation better
+          SDK_PATH=${ANDROID_HOME:-${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}}
+          bubblewrap updateConfig --jdkPath="${JAVA_HOME}" --androidSdkPath="${SDK_PATH}"
           bubblewrap doctor
 
       - name: Prepare Signing Key
